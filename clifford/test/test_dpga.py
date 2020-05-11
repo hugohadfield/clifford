@@ -3,6 +3,13 @@ import numpy as np
 import pytest
 from clifford.dpga import *
 
+from hypothesis import given, settings
+import hypothesis.strategies as st
+from hypothesis.extra.numpy import arrays as st_arrays
+
+
+test_double = st.floats(-1E-2, 1E+2, allow_nan=False, allow_infinity=False, width=64)
+
 
 class TestBasicDPGA:
     def test_non_orthogonal_metric(self):
@@ -44,67 +51,67 @@ class TestBasicDPGA:
         for wi, wis in zip(wlist, wslist):
             assert wi*wis == 1 - wis*wi
 
-    def test_up_down(self):
-        rng = np.random.default_rng()  # can pass a seed here later
-        for i in range(1000):
-            p = rng.standard_normal(3)
-            dpga_pnt = up(p)
-            pnt_down = down(np.random.rand()*dpga_pnt)
-            np.testing.assert_allclose(pnt_down, p)
+    @settings(deadline=None)
+    @given(p=st_arrays(np.double, 3, elements=test_double))
+    def test_up_down(self, p):
+        dpga_pnt = up(p)
+        # This is a homogeneous point representation
+        pnt_down = down(5.0*dpga_pnt)
+        np.testing.assert_allclose(pnt_down, p)
 
-    def test_translate(self):
-        rng = np.random.default_rng()   # can pass a seed here later
-        for i in range(100):
-            tvec = rng.standard_normal(3)
-            wt = tvec[0]*w1 + tvec[1]*w2 + tvec[2]*w3
-            biv = w0s*wt
-            Rt = 1 - biv
-            exp_result = np.e**(-biv)
-            assert Rt == exp_result
+    @settings(deadline=None)
+    @given(tvec=st_arrays(np.double, 3, elements=test_double),
+           pnt_vec=st_arrays(np.double, 3, elements=test_double))
+    def test_translate(self, tvec, pnt_vec):
+        wt = tvec[0]*w1 + tvec[1]*w2 + tvec[2]*w3
+        biv = w0s*wt
+        Rt = 1 - biv
+        exp_result = np.e**(-biv)
+        assert Rt == exp_result
 
-            assert Rt * w0 * ~Rt == w0 + wt
-            for wi in [w1, w2, w3]:
-                assert Rt * wi * ~Rt == wi
+        assert Rt * w0 * ~Rt == w0 + wt
+        for wi in [w1, w2, w3]:
+            assert Rt * wi * ~Rt == wi
 
-            assert (Rt*~Rt) == 1 + 0*w1
+        assert (Rt*~Rt) == 1 + 0*w1
 
-            pnt_vec = rng.standard_normal(3)
-            pnt = up(pnt_vec)
-            res = Rt*pnt*~Rt
-            desired_result = up(pnt_vec+tvec)
+        pnt = up(pnt_vec)
+        res = Rt*pnt*~Rt
+        desired_result = up(pnt_vec+tvec)
 
-            assert up(pnt_vec) + wt == desired_result
-            assert res == desired_result
+        assert up(pnt_vec) + wt == desired_result
+        assert res == desired_result
 
-    def test_rotate(self):
-        rng = np.random.default_rng()  # can pass a seed here later
-        for i in range(100):
-            mvec = rng.standard_normal(3)
-            nvec = rng.standard_normal(3)
-            m = mvec[0] * w1 + mvec[1] * w2 + mvec[2] * w3
-            n = nvec[0] * w1 + nvec[1] * w2 + nvec[2] * w3
-            ms = mvec[0] * w1s + mvec[1] * w2s + mvec[2] * w3s
-            ns = nvec[0] * w1s + nvec[1] * w2s + nvec[2] * w3s
-            biv = 2*((ms^n) - (ns^m))
-            Rt = np.e**(-biv)
+    @settings(deadline=None)
+    @given(mvec=st_arrays(np.double, 3, elements=test_double),
+           nvec=st_arrays(np.double, 3, elements=test_double),
+           pnt_vec=st_arrays(np.double, 3, elements=test_double))
+    def test_rotate(self, mvec, nvec, pnt_vec):
+        m = mvec[0] * w1 + mvec[1] * w2 + mvec[2] * w3
+        n = nvec[0] * w1 + nvec[1] * w2 + nvec[2] * w3
+        ms = mvec[0] * w1s + mvec[1] * w2s + mvec[2] * w3s
+        ns = nvec[0] * w1s + nvec[1] * w2s + nvec[2] * w3s
+        biv = 2*((ms^n) - (ns^m))
+        Rt = np.e**(-biv)
 
-            # Rotor should be unit
-            np.testing.assert_allclose((Rt*~Rt).value, (1 + 0*w1).value, atol=1E-4)
+        # Rotor should be unit
+        np.testing.assert_allclose((Rt*~Rt).clean().value, (1 + 0*w1).value, atol=1E-3, rtol=1E-2)
 
-            # The origin should be unaffected by rotation
-            np.testing.assert_allclose((Rt*w0*~Rt).value, w0.value, atol=1E-4)
+        # The origin should be unaffected by rotation
+        origin_transform = (Rt * w0 * ~Rt)
+        np.testing.assert_allclose(origin_transform(1).value, w0.value, atol=1E-3, rtol=1E-2)
+        np.testing.assert_allclose(origin_transform - origin_transform(1), 0, atol=1E-6)
 
-            # Vectors orthogonal to the rotation should be unaffected by rotation
-            vorthog = np.cross(mvec, nvec)
-            uporthog = up(vorthog)
-            np.testing.assert_allclose((Rt*uporthog*~Rt).value, uporthog.value, atol=1E-4)
+        # Vectors orthogonal to the rotation should be unaffected by rotation
+        vorthog = np.cross(mvec, nvec)
+        uporthog = up(vorthog)
+        np.testing.assert_allclose((Rt*uporthog*~Rt)(1).value, uporthog.value, atol=1E-3, rtol=1E-2)
 
-            # Points should maintain their distance from the origin
-            pnt_vec = rng.standard_normal(3)
-            l = np.linalg.norm(pnt_vec)
-            pnt = up(pnt_vec)
-            lres = np.linalg.norm(down(Rt * pnt * ~Rt))
-            np.testing.assert_allclose(l, lres, atol=1E-6)
+        # Points should maintain their distance from the origin
+        l = np.linalg.norm(pnt_vec)
+        pnt = up(pnt_vec)
+        lres = np.linalg.norm(down(Rt * pnt * ~Rt))
+        np.testing.assert_allclose(l, lres, atol=1E-6)
 
     def test_line(self):
         rng = np.random.default_rng()  # can pass a seed here later
