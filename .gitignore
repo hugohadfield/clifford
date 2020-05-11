@@ -2,9 +2,6 @@
 __pycache__/
 *.py[cod]
 
-# Hypothesis
-test/.hypothesis/
-
 # C extensions
 *.so
 
@@ -65,3 +62,5 @@ target/
 .ipynb_checkpoints
 
 /docs/api/generated/*
+
+clifford/test/\.hypothesis/
