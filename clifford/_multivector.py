@@ -722,6 +722,9 @@ class MultiVector(object):
     def hitzer_inverse(self):
         return self.layout._hitzer_inverse(self)
 
+    def shirokov_inverse(self):
+        return self.layout._shirokov_inverse(self)
+
     def leftLaInv(self) -> 'MultiVector':
         """Return left-inverse using a computational linear algebra method
         proposed by Christian Perwass.
@@ -743,7 +746,7 @@ class MultiVector(object):
         if fallback is not None and not MadjointM.isScalar():
             if fallback:
                 try:
-                    return self.hitzer_inverse()
+                    return self.shirokov_inverse()
                 except NotImplementedError:
                     return self.leftLaInv()
             else:
