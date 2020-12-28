@@ -20,7 +20,7 @@ class TestClosedForm:
             mv = layout.randomMV()
             mv_inv = mv.hitzer_inverse()
             np.testing.assert_allclose((mv * mv_inv).value,
-                                        layout.scalar.value,
+                                       layout.scalar.value,
                                        rtol=1E-5,
                                        atol=1E-6)
 
@@ -37,6 +37,6 @@ class TestClosedForm:
             mv = layout.randomMV()
             mv_inv = mv.shirokov_inverse()
             np.testing.assert_allclose((mv * mv_inv).value,
-                                        layout.scalar.value,
+                                       layout.scalar.value,
                                        rtol=1E-5,
                                        atol=1E-6)
