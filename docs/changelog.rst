@@ -12,6 +12,9 @@ Changes in 1.4.x
  * Where possible, ``MultiVector``\ s preserve their data type in the dual, and
    the right and left complements.
 
+ * The default multivector inverse method is now the arbitrary signature algorithm described
+   in Theorem 4, page 16 of Dmitry Shirokov's ICCA 2020 paper :cite:`shirokov2020inverse`.
+
 Changes in 1.3.x
 ++++++++++++++++
 
