@@ -601,7 +601,7 @@ class Layout(object):
         @_numba_utils.njit
         def hitzer_inverse(operand):
             if tot == 0:
-                numerator = operand.layout.scalar
+                numerator = 1 + 0*operand
             elif tot == 1:
                 # Equation 4.3
                 mv_invol = operand.gradeInvol()
@@ -754,7 +754,7 @@ class Layout(object):
     @property
     def pseudoScalar(self) -> MultiVector:
         '''
-        the psuedoScalar
+        The pseudoscalar, :math:`I`.
         '''
         return self.blades_list[-1]
 

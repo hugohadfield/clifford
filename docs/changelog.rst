@@ -15,6 +15,10 @@ Changes in 1.4.x
  * The default multivector inverse method is now the arbitrary signature algorithm described
    in Theorem 4, page 16 of Dmitry Shirokov's ICCA 2020 paper :cite:`shirokov2020inverse`.
 
+ * A new :mod:`clifford.taylor_expansions` is added to implement taylor series of various
+   multivector functions, starting with common trigonometric functions. These functions are
+   additionally exposed via methods on the MultiVector class itself.
+
 Changes in 1.3.x
 ++++++++++++++++
 
